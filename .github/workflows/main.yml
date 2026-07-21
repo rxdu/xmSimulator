@@ -1,0 +1,40 @@
+name: Main
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-and-test:
+    name: Build & test (MuJoCo)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-22.04, ubuntu-24.04 ]
+    steps:
+      - uses: actions/checkout@v4
+
+      # gtest for the tests; EGL/Mesa so the camera builds and can render
+      # headless (llvmpipe). The lidar/world/dynamics tests are pure CPU.
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            libgtest-dev libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dri
+
+      - name: Fetch MuJoCo
+        run: scripts/setup/fetch_mujoco.sh
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error
