@@ -43,6 +43,29 @@ else ()
   message(STATUS "xmSimulator: camera DISABLED — EGL not found (lidar still built)")
 endif ()
 
+# --- GLFW (optional) — onscreen GL for the interactive viewer ----------------
+# Independent of EGL: a headless CI box gets the camera but no viewer, a desktop
+# gets both. Prefer the installed CMake package; fall back to pkg-config.
+set(XMSIM_HAS_VIEWER OFF)
+find_package(glfw3 QUIET)
+if (glfw3_FOUND)
+  set(XMSIM_HAS_VIEWER ON)
+  set(XMSIM_GLFW_TARGET glfw)
+  message(STATUS "xmSimulator: viewer ENABLED (glfw3 ${glfw3_VERSION}, find_package)")
+else ()
+  find_package(PkgConfig QUIET)
+  if (PkgConfig_FOUND)
+    pkg_check_modules(XMSIM_GLFW QUIET glfw3)
+  endif ()
+  if (XMSIM_GLFW_FOUND)
+    set(XMSIM_HAS_VIEWER ON)
+    set(XMSIM_GLFW_TARGET PkgConfig::XMSIM_GLFW)
+    message(STATUS "xmSimulator: viewer ENABLED (glfw3 ${XMSIM_GLFW_VERSION}, pkg-config)")
+  else ()
+    message(STATUS "xmSimulator: viewer DISABLED — GLFW not found (headless sim still built)")
+  endif ()
+endif ()
+
 # ------------------------------- library ------------------------------------
 add_library(xmSimulator STATIC src/world.cpp src/lidar/lidar.cpp)
 add_library(xmotion::xmSimulator ALIAS xmSimulator)
@@ -60,6 +83,19 @@ if (XMSIM_HAS_CAMERA)
   target_link_libraries(xmSimulator PRIVATE "${XMSIM_EGL_LIB}")
   target_compile_definitions(xmSimulator PUBLIC XMSIM_HAS_CAMERA=1)
 endif ()
+
+if (XMSIM_HAS_VIEWER)
+  target_sources(xmSimulator PRIVATE src/viewer/viewer.cpp)
+  # PRIVATE: viewer.hpp exposes no GLFW type, so consumers never need its headers.
+  target_link_libraries(xmSimulator PRIVATE ${XMSIM_GLFW_TARGET})
+  target_compile_definitions(xmSimulator PUBLIC XMSIM_HAS_VIEWER=1)
+endif ()
+
+# Expose the optional-feature flags so a consumer added via add_subdirectory can
+# gate its OWN targets (e.g. a GUI app that needs the viewer). The compile
+# definitions above only reach C++; these reach the parent's CMake scope.
+set(XMSIM_HAS_VIEWER "${XMSIM_HAS_VIEWER}" CACHE INTERNAL "xmSimulator viewer built")
+set(XMSIM_HAS_CAMERA "${XMSIM_HAS_CAMERA}" CACHE INTERNAL "xmSimulator camera built")
 
 # Expose the MuJoCo lib dir so consumers can add it to their own rpath.
 set(XMSIM_MUJOCO_LIB_DIR "${XMSIM_MUJOCO_DIR}/lib"
