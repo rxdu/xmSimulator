@@ -1,0 +1,18 @@
+# build
+build
+build-*/
+cmake-build-*/
+
+# Prebuilt MuJoCo SDK, fetched by scripts/setup/fetch_mujoco.sh (host-only).
+third_party/mujoco
+# MuJoCo drops this in the working dir on model load.
+MUJOCO_LOG.TXT
+
+# googletest is expected as a submodule at third_party/googletest (or supply
+# XMSIM_GTEST_DIR / a system GTest). A local checkout there is not committed.
+third_party/googletest/
+
+# editors
+.vscode
+.idea/
+compile_commands.json

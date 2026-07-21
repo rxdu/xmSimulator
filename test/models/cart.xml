@@ -1,0 +1,81 @@
+<!--
+  cart.xml — a differential-drive cart (NOT a swerve robot): two velocity-driven
+  wheels + a passive caster. It exists to prove xmSim's MujocoWorld + sensors are
+  robot-agnostic: the same world verbs (SetCtrl on "left"/"right", read
+  jointvel/imu/ground-truth) and the same Lidar/Camera classes drive a completely
+  different platform than the swerve base. Walls give the lidar something to hit.
+
+  Conventions xmSim expects of any robot scene: a body named "chassis", an "imu"
+  site with gyro/accelerometer/framequat sensors, a "lidar" site, a "front"
+  camera, robot geoms in visual groups >0 (so the lidar excludes them), and
+  <visual><global offwidth offheight> for the camera.
+-->
+<mujoco model="xmsim cart">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="implicitfast"/>
+
+  <default>
+    <default class="wheel">
+      <joint type="hinge" axis="0 1 0" damping="0.02"/>
+      <general biastype="affine" gainprm="8 0 0" biasprm="0 0 -8"
+               forcerange="-6 6" ctrlrange="-30 30"/>
+      <geom type="cylinder" size="0.05 0.02" zaxis="0 1 0" mass="0.4"
+            friction="1.2 0.01 0.001" group="2" rgba="0.15 0.15 0.15 1"/>
+    </default>
+    <default class="part">
+      <geom contype="0" conaffinity="0" group="2"/>
+    </default>
+  </default>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <global azimuth="-130" elevation="-20" offwidth="320" offheight="240"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0"
+             width="256" height="1536"/>
+    <material name="wall" rgba="0.7 0.7 0.72 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 3" dir="0 0 -1" directional="true"/>
+    <geom name="floor" type="plane" size="0 0 0.05" condim="3"
+          friction="1.2 0.01 0.001" rgba="0.3 0.35 0.4 1"/>
+    <geom name="wall_px" type="box" size="0.05 3 1" pos="3 0 1" material="wall"/>
+    <geom name="wall_py" type="box" size="3 0.05 1" pos="0 2 1" material="wall"/>
+    <geom name="wall_ny" type="box" size="3 0.05 1" pos="0 -2 1" material="wall"/>
+
+    <body name="chassis" pos="0 0 0.08">
+      <freejoint name="chassis_free"/>
+      <geom name="deck" class="part" type="box" size="0.15 0.12 0.04" mass="3.0"
+            rgba="0.6 0.4 0.2 1"/>
+      <site name="imu" pos="0 0 0" size="0.005"/>
+      <site name="lidar" pos="0.0 0 0.06" size="0.005"/>
+      <camera name="front" pos="0.15 0 0.05" xyaxes="0 -1 0 0 0 1" fovy="70"/>
+      <!-- passive caster at the front for stability -->
+      <geom name="caster" class="part" type="sphere" size="0.03" pos="0.12 0 -0.05"
+            contype="1" conaffinity="1" friction="0.05 0.005 0.0001"/>
+      <body name="left_wheel" pos="0 0.13 -0.03">
+        <joint name="left" class="wheel"/>
+        <geom name="left" class="wheel"/>
+      </body>
+      <body name="right_wheel" pos="0 -0.13 -0.03">
+        <joint name="right" class="wheel"/>
+        <geom name="right" class="wheel"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <general class="wheel" name="left" joint="left"/>
+    <general class="wheel" name="right" joint="right"/>
+  </actuator>
+
+  <sensor>
+    <jointvel joint="left" name="left_vel"/>
+    <jointvel joint="right" name="right_vel"/>
+    <gyro site="imu" name="imu_gyro"/>
+    <accelerometer site="imu" name="imu_acc"/>
+    <framequat objtype="site" objname="imu" name="imu_quat"/>
+  </sensor>
+</mujoco>
