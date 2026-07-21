@@ -70,6 +70,7 @@ class MujocoWorld {
   int Actuator(const std::string& name) const;
   int Sensor(const std::string& name) const;
   int Body(const std::string& name) const;
+  int Joint(const std::string& name) const;
 
   // Stepping / actuation (caller holds mutex()).
   void SetCtrl(int actuator_id, double value);
@@ -78,6 +79,13 @@ class MujocoWorld {
   // Sensor reads by id (caller holds mutex()).
   double SensorScalar(int sensor_id) const;               // first channel
   void SensorVec(int sensor_id, double* out, int n) const;
+
+  // Direct joint / actuator reads (caller holds mutex()) — for robots that read
+  // state straight from the physics rather than declaring jointpos/jointvel
+  // sensors (e.g. a legged torque-controlled platform reading qpos/qvel/force).
+  double JointPosition(int joint_id) const;   // qpos at the joint
+  double JointVelocity(int joint_id) const;   // qvel at the joint's dof
+  double ActuatorForce(int actuator_id) const;
 
   // Convenience state reads (caller holds mutex()). Body pose is read directly
   // from the kinematics (xpos/xquat) — no dedicated sensors needed. IMU needs

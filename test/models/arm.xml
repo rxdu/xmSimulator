@@ -1,0 +1,43 @@
+<!--
+  arm.xml — a torque-controlled 2-link arm. It is the "legged-style" second
+  platform for freezing the MujocoWorld API: unlike the swerve base and the cart,
+  it uses <motor> (torque) actuators and declares NO jointpos/jointvel sensors —
+  state is read straight from the physics (qpos/qvel/actuator_force), exactly how
+  a legged controller reads its robot. If MujocoWorld can drive and read this, its
+  API covers torque-joint platforms without forcing sensor tags into their MJCF.
+-->
+<mujoco model="xmsim arm">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="implicitfast"/>
+
+  <worldbody>
+    <light pos="0 0 2" dir="0 0 -1" directional="true"/>
+    <body name="chassis" pos="0 0 0.6">
+      <!-- fixed base (no joint): ground_truth reads its static pose -->
+      <geom type="box" size="0.05 0.05 0.05" mass="1.0" rgba="0.5 0.5 0.55 1"/>
+      <site name="imu" pos="0 0 0" size="0.005"/>
+      <body name="link1" pos="0 0 0">
+        <joint name="j1" type="hinge" axis="0 1 0" damping="0.1"/>
+        <geom type="capsule" fromto="0 0 0 0.3 0 0" size="0.02" mass="0.3"
+              rgba="0.7 0.4 0.2 1"/>
+        <body name="link2" pos="0.3 0 0">
+          <joint name="j2" type="hinge" axis="0 1 0" damping="0.1"/>
+          <geom type="capsule" fromto="0 0 0 0.3 0 0" size="0.02" mass="0.2"
+                rgba="0.2 0.5 0.7 1"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor joint="j1" name="j1" gear="1" ctrlrange="-3 3"/>
+    <motor joint="j2" name="j2" gear="1" ctrlrange="-3 3"/>
+  </actuator>
+
+  <sensor>
+    <!-- Only an IMU — deliberately NO jointpos/jointvel (read qpos/qvel direct). -->
+    <gyro site="imu" name="imu_gyro"/>
+    <accelerometer site="imu" name="imu_acc"/>
+    <framequat objtype="site" objname="imu" name="imu_quat"/>
+  </sensor>
+</mujoco>

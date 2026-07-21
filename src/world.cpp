@@ -55,6 +55,22 @@ int MujocoWorld::Sensor(const std::string& name) const {
 int MujocoWorld::Body(const std::string& name) const {
   return loaded() ? mj_name2id(model_, mjOBJ_BODY, name.c_str()) : -1;
 }
+int MujocoWorld::Joint(const std::string& name) const {
+  return loaded() ? mj_name2id(model_, mjOBJ_JOINT, name.c_str()) : -1;
+}
+
+double MujocoWorld::JointPosition(int joint_id) const {
+  if (joint_id < 0) return 0.0;
+  return data_->qpos[model_->jnt_qposadr[joint_id]];
+}
+double MujocoWorld::JointVelocity(int joint_id) const {
+  if (joint_id < 0) return 0.0;
+  return data_->qvel[model_->jnt_dofadr[joint_id]];
+}
+double MujocoWorld::ActuatorForce(int actuator_id) const {
+  if (actuator_id < 0) return 0.0;
+  return data_->actuator_force[actuator_id];
+}
 
 void MujocoWorld::SetCtrl(int actuator_id, double value) {
   if (actuator_id >= 0 && actuator_id < model_->nu) data_->ctrl[actuator_id] = value;

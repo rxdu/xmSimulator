@@ -29,7 +29,7 @@ xmotion::sim::lidar::Lidar lidar(world, {});       // same sensor, any robot
 auto cloud = lidar.Capture(gt.time);
 ```
 
-`test/models/cart.xml` (a differential-drive cart) + `test/test_world_lidar.cpp` are the second-platform proof that this is genuinely robot-agnostic — the *same* world and sensors that drive the swerve base drive a completely different robot.
+Two non-swerve platforms freeze the API: `test/models/cart.xml` (a differential-drive cart, **velocity** actuators, declared sensors) and `test/models/arm.xml` (a **torque** `<motor>` arm read via `qpos`/`qvel`/`actuator_force` with **no** joint sensors — the legged pattern). The *same* world and sensors that drive the swerve base drive both, so the command/read surface covers position, velocity, and torque control.
 
 ### Scene conventions
 
