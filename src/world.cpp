@@ -72,6 +72,22 @@ double MujocoWorld::ActuatorForce(int actuator_id) const {
   return data_->actuator_force[actuator_id];
 }
 
+double MujocoWorld::ContactNormalForce(int body_id) const {
+  if (!loaded() || body_id < 0) return 0.0;
+  double total = 0.0;
+  mjtNum wrench[6] = {0};  // contact-frame [force(3), torque(3)]
+  for (int i = 0; i < data_->ncon; ++i) {
+    const mjContact& c = data_->contact[i];
+    // geom[k] is -1 for a flex contact; skip those (no rigid-geom body).
+    const int b0 = c.geom[0] >= 0 ? model_->geom_bodyid[c.geom[0]] : -1;
+    const int b1 = c.geom[1] >= 0 ? model_->geom_bodyid[c.geom[1]] : -1;
+    if (b0 != body_id && b1 != body_id) continue;
+    mj_contactForce(model_, data_, i, wrench);
+    total += wrench[0];  // normal component (contact-frame axis 0, >= 0)
+  }
+  return total;
+}
+
 void MujocoWorld::SetCtrl(int actuator_id, double value) {
   if (actuator_id >= 0 && actuator_id < model_->nu) data_->ctrl[actuator_id] = value;
 }

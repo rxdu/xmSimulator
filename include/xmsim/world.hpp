@@ -87,6 +87,15 @@ class MujocoWorld {
   double JointVelocity(int joint_id) const;   // qvel at the joint's dof
   double ActuatorForce(int actuator_id) const;
 
+  // Contact / foot-contact force (caller holds mutex()) — sums the normal
+  // component of every active contact touching any geom of the named body, via
+  // mj_contactForce over data()->contact[0..ncon). Robot-agnostic touch sensing
+  // that needs NO declared sensor (the general case for a foot): returns > 0 (N)
+  // when the body presses on something, 0 in the air (or when body_id < 0). If a
+  // scene instead declares an MJCF <touch> sensor, its scalar normal force reads
+  // through the existing SensorScalar(Sensor(name)) path.
+  double ContactNormalForce(int body_id) const;
+
   // Convenience state reads (caller holds mutex()). Body pose is read directly
   // from the kinematics (xpos/xquat) — no dedicated sensors needed. IMU needs
   // the named site sensors (defaults match the sim MJCF convention).
