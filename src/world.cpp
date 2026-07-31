@@ -94,6 +94,29 @@ void MujocoWorld::SetCtrl(int actuator_id, double value) {
 
 void MujocoWorld::StepOnce() { mj_step(model_, data_); }
 
+void MujocoWorld::SetJointPosition(int joint_id, double value) {
+  if (!loaded() || joint_id < 0) return;
+  data_->qpos[model_->jnt_qposadr[joint_id]] = value;
+}
+
+void MujocoWorld::SetFreeBasePose(const std::string& body,
+                                  const std::array<double, 3>& position,
+                                  const std::array<double, 4>& orientation) {
+  if (!loaded()) return;
+  const int bid = mj_name2id(model_, mjOBJ_BODY, body.c_str());
+  if (bid < 0) return;
+  // A floating base is a free joint attached to the body (its first joint).
+  const int jid = model_->body_jntadr[bid];
+  if (jid < 0 || model_->jnt_type[jid] != mjJNT_FREE) return;
+  const int adr = model_->jnt_qposadr[jid];
+  for (int k = 0; k < 3; ++k) data_->qpos[adr + k] = position[k];
+  for (int k = 0; k < 4; ++k) data_->qpos[adr + 3 + k] = orientation[k];
+}
+
+void MujocoWorld::Forward() {
+  if (loaded()) mj_forward(model_, data_);
+}
+
 double MujocoWorld::SensorScalar(int sensor_id) const {
   if (sensor_id < 0) return 0.0;
   return data_->sensordata[model_->sensor_adr[sensor_id]];

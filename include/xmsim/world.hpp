@@ -76,6 +76,19 @@ class MujocoWorld {
   void SetCtrl(int actuator_id, double value);
   void StepOnce();  // one mj_step
 
+  // --- State writes (caller holds mutex()) — teleport the model to an initial
+  //     configuration before stepping (a test harness / reset that places a
+  //     robot at a chosen posture). Writes qpos directly; call Forward()
+  //     afterwards to refresh derived quantities (xpos/xquat, sensors). These
+  //     are the write side of the JointPosition read above. ---
+  void SetJointPosition(int joint_id, double value);  // qpos at the joint
+  // Teleport a floating base: set the free joint of `body` to world position
+  // (m) and orientation quat (w,x,y,z). No-op if the body has no free joint.
+  void SetFreeBasePose(const std::string& body,
+                       const std::array<double, 3>& position,
+                       const std::array<double, 4>& orientation);
+  void Forward();  // mj_forward — recompute derived state after manual writes
+
   // Sensor reads by id (caller holds mutex()).
   double SensorScalar(int sensor_id) const;               // first channel
   void SensorVec(int sensor_id, double* out, int n) const;
