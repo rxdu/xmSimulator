@@ -76,6 +76,19 @@ class MujocoWorld {
   void SetCtrl(int actuator_id, double value);
   void StepOnce();  // one mj_step
 
+  // --- State writes (caller holds mutex()) — teleport the model to an initial
+  //     configuration before stepping (a test harness / reset that places a
+  //     robot at a chosen posture). Writes qpos directly; call Forward()
+  //     afterwards to refresh derived quantities (xpos/xquat, sensors). These
+  //     are the write side of the JointPosition read above. ---
+  void SetJointPosition(int joint_id, double value);  // qpos at the joint
+  // Teleport a floating base: set the free joint of `body` to world position
+  // (m) and orientation quat (w,x,y,z). No-op if the body has no free joint.
+  void SetFreeBasePose(const std::string& body,
+                       const std::array<double, 3>& position,
+                       const std::array<double, 4>& orientation);
+  void Forward();  // mj_forward — recompute derived state after manual writes
+
   // Sensor reads by id (caller holds mutex()).
   double SensorScalar(int sensor_id) const;               // first channel
   void SensorVec(int sensor_id, double* out, int n) const;
@@ -86,6 +99,15 @@ class MujocoWorld {
   double JointPosition(int joint_id) const;   // qpos at the joint
   double JointVelocity(int joint_id) const;   // qvel at the joint's dof
   double ActuatorForce(int actuator_id) const;
+
+  // Contact / foot-contact force (caller holds mutex()) — sums the normal
+  // component of every active contact touching any geom of the named body, via
+  // mj_contactForce over data()->contact[0..ncon). Robot-agnostic touch sensing
+  // that needs NO declared sensor (the general case for a foot): returns > 0 (N)
+  // when the body presses on something, 0 in the air (or when body_id < 0). If a
+  // scene instead declares an MJCF <touch> sensor, its scalar normal force reads
+  // through the existing SensorScalar(Sensor(name)) path.
+  double ContactNormalForce(int body_id) const;
 
   // Convenience state reads (caller holds mutex()). Body pose is read directly
   // from the kinematics (xpos/xquat) — no dedicated sensors needed. IMU needs

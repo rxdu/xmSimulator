@@ -121,7 +121,7 @@ if (XMSIM_BUILD_TESTS)
   endif ()
 
   set(XMSIM_TEST_MODELS "${CMAKE_CURRENT_SOURCE_DIR}/test/models")
-  foreach (t test_dynamics test_scan_pattern test_world_lidar test_torque_platform)
+  foreach (t test_dynamics test_scan_pattern test_world_lidar test_torque_platform test_contact)
     add_executable(${t} test/${t}.cpp)
     target_link_libraries(${t} PRIVATE xmSimulator ${XMSIM_GTEST_LIBS})
     target_compile_definitions(${t} PRIVATE XMSIM_TEST_MODELS="${XMSIM_TEST_MODELS}")

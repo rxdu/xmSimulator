@@ -72,11 +72,50 @@ double MujocoWorld::ActuatorForce(int actuator_id) const {
   return data_->actuator_force[actuator_id];
 }
 
+double MujocoWorld::ContactNormalForce(int body_id) const {
+  if (!loaded() || body_id < 0) return 0.0;
+  double total = 0.0;
+  mjtNum wrench[6] = {0};  // contact-frame [force(3), torque(3)]
+  for (int i = 0; i < data_->ncon; ++i) {
+    const mjContact& c = data_->contact[i];
+    // geom[k] is -1 for a flex contact; skip those (no rigid-geom body).
+    const int b0 = c.geom[0] >= 0 ? model_->geom_bodyid[c.geom[0]] : -1;
+    const int b1 = c.geom[1] >= 0 ? model_->geom_bodyid[c.geom[1]] : -1;
+    if (b0 != body_id && b1 != body_id) continue;
+    mj_contactForce(model_, data_, i, wrench);
+    total += wrench[0];  // normal component (contact-frame axis 0, >= 0)
+  }
+  return total;
+}
+
 void MujocoWorld::SetCtrl(int actuator_id, double value) {
   if (actuator_id >= 0 && actuator_id < model_->nu) data_->ctrl[actuator_id] = value;
 }
 
 void MujocoWorld::StepOnce() { mj_step(model_, data_); }
+
+void MujocoWorld::SetJointPosition(int joint_id, double value) {
+  if (!loaded() || joint_id < 0) return;
+  data_->qpos[model_->jnt_qposadr[joint_id]] = value;
+}
+
+void MujocoWorld::SetFreeBasePose(const std::string& body,
+                                  const std::array<double, 3>& position,
+                                  const std::array<double, 4>& orientation) {
+  if (!loaded()) return;
+  const int bid = mj_name2id(model_, mjOBJ_BODY, body.c_str());
+  if (bid < 0) return;
+  // A floating base is a free joint attached to the body (its first joint).
+  const int jid = model_->body_jntadr[bid];
+  if (jid < 0 || model_->jnt_type[jid] != mjJNT_FREE) return;
+  const int adr = model_->jnt_qposadr[jid];
+  for (int k = 0; k < 3; ++k) data_->qpos[adr + k] = position[k];
+  for (int k = 0; k < 4; ++k) data_->qpos[adr + 3 + k] = orientation[k];
+}
+
+void MujocoWorld::Forward() {
+  if (loaded()) mj_forward(model_, data_);
+}
 
 double MujocoWorld::SensorScalar(int sensor_id) const {
   if (sensor_id < 0) return 0.0;

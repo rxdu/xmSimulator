@@ -1,0 +1,33 @@
+<!--
+  contact.xml — a single free body resting on a ground plane, used to freeze the
+  MujocoWorld contact-force API. It exercises BOTH contact-sensing paths:
+    * ContactNormalForce(Body("foot")) — sums the true contact normal force on
+      the body via mj_contactForce, needing NO declared sensor (the foot case);
+    * a declared MJCF <touch> sensor ("foot_touch") read through SensorScalar.
+  At rest the plane supports the body's weight (m*g), so both read ~19.6 N; lift
+  the body clear of the plane and both fall to zero. Robot-agnostic: just a body,
+  a plane, and a touch site — no notion of any particular robot.
+-->
+<mujoco model="xmsim contact">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="implicitfast"/>
+
+  <worldbody>
+    <light pos="0 0 2" dir="0 0 -1" directional="true"/>
+    <geom name="floor" type="plane" size="0 0 0.05" condim="3"
+          friction="1.0 0.005 0.0001" rgba="0.3 0.35 0.4 1"/>
+    <!-- starts well above the plane: airborne (zero contact) until it falls -->
+    <body name="foot" pos="0 0 0.5">
+      <freejoint name="foot_free"/>
+      <geom name="foot" type="box" size="0.05 0.05 0.05" mass="2.0"
+            friction="1.0 0.005 0.0001" rgba="0.6 0.4 0.2 1"/>
+      <!-- touch zone hugging the box's underside, so only ground contacts count -->
+      <site name="foot_touch" type="box" pos="0 0 -0.05" size="0.06 0.06 0.01"/>
+      <site name="imu" pos="0 0 0" size="0.005"/>
+    </body>
+  </worldbody>
+
+  <sensor>
+    <touch site="foot_touch" name="foot_touch"/>
+  </sensor>
+</mujoco>
