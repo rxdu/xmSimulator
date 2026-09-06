@@ -38,3 +38,33 @@ jobs:
       - name: Test
         working-directory: build
         run: ctest --output-on-failure --no-tests=error
+
+  # macOS coverage: AppleClang + libc++ on arm64. MuJoCo ships macOS as a .dmg
+  # holding mujoco.framework rather than the include/ + lib/ tarball, which the
+  # fetch script remaps. The camera sensor is unavailable here -- macOS has no
+  # EGL -- so this lane covers physics, dynamics, lidar and scan patterns; the
+  # existing find_library guard reports "camera DISABLED" and builds the rest.
+  macos:
+    name: Build & test (MuJoCo, macOS arm64)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      # googletest: this repo vendors no copy. No EGL/Mesa equivalent exists on
+      # macOS, hence no camera.
+      - name: Install dependencies
+        run: brew install googletest glfw
+
+      - name: Fetch MuJoCo
+        run: scripts/setup/fetch_mujoco.sh
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error
+
