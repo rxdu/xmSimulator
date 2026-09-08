@@ -73,7 +73,13 @@ target_include_directories(xmSimulator PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
 target_include_directories(xmSimulator SYSTEM PRIVATE "${XMSIM_MUJOCO_DIR}/include")
-target_link_libraries(xmSimulator PRIVATE "${XMSIM_MUJOCO_DIR}/lib/libmujoco.so")
+# The prebuilt MuJoCo ships as .so on Linux and .dylib on macOS.
+if (APPLE)
+  set(XMSIM_MUJOCO_LIB "${XMSIM_MUJOCO_DIR}/lib/libmujoco.dylib")
+else ()
+  set(XMSIM_MUJOCO_LIB "${XMSIM_MUJOCO_DIR}/lib/libmujoco.so")
+endif ()
+target_link_libraries(xmSimulator PRIVATE "${XMSIM_MUJOCO_LIB}")
 target_compile_options(xmSimulator PRIVATE -Wall -Wextra)
 set_target_properties(xmSimulator PROPERTIES BUILD_RPATH "${XMSIM_MUJOCO_DIR}/lib")
 
