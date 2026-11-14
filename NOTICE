@@ -1,0 +1,8 @@
+XMotion — xmSimulator (physics simulation: MuJoCo world, sensors, dynamics)
+Copyright 2026 Ruixiang Du
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party components used at build time -- the MuJoCo SDK fetched by
+scripts/setup/fetch_mujoco.sh, and googletest -- are not part of this
+repository and keep their own licenses.
