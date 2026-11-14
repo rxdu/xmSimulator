@@ -54,3 +54,7 @@ target_link_libraries(my_plant PUBLIC xmotion::xmSimulator)
 ```
 
 See `swervebot_controller`'s `MujocoSwerveActuator` for a full adapter that maps a 4-module swerve seam onto the world, applies the steering/drive dynamics, and exposes `world()` for mounting sensors.
+
+## License
+
+Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
