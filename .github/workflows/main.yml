@@ -46,7 +46,7 @@ jobs:
   # existing find_library guard reports "camera DISABLED" and builds the rest.
   macos:
     name: Build & test (MuJoCo, macOS arm64)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
